@@ -1,5 +1,6 @@
 export * from './tenant-scoped.entity';
 export * from './tenant.entity';
+export * from './user.entity';
 export * from './monitored-service.entity';
 export * from './incident.entity';
 export * from './diagnosis.entity';

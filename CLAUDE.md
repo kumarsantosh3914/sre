@@ -54,12 +54,12 @@ sre-ai/
 **Completed:**
 - [x] Monorepo scaffold
 - [x] PostgreSQL + pgvector + migrations
-- [ ] JWT auth + multi-tenancy
+- [x] JWT auth + multi-tenancy
 - [ ] SQS + BullMQ setup
 - [ ] Logging + error handling
 - [ ] Docker + CI/CD
 
-**Next task:** JWT auth + multi-tenancy (User entity/migration, access+refresh tokens, tenant guard)
+**Next task:** SQS + BullMQ setup (ingestion-service webhook receivers enqueue to SQS, DLQ configured)
 
 ---
 

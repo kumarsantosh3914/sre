@@ -31,3 +31,16 @@ export interface RequestContext {
   traceId: string;
   tenantId: string;
 }
+
+export enum UserRole {
+  OWNER = 'owner',
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
+export interface JwtAccessPayload {
+  sub: string;
+  tenantId: string;
+  email: string;
+  role: UserRole;
+}

@@ -1,6 +1,11 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { dataSourceOptions } from '@sreai/database';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -14,8 +19,14 @@ import { HealthController } from './health/health.controller';
       isGlobal: true,
       envFilePath: ['.env', join(__dirname, '..', '..', '..', '.env')],
     }),
+    TypeOrmModule.forRoot(dataSourceOptions),
+    AuthModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    // Secure by default: every route requires a valid access token unless
+    // explicitly marked @Public().
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}
