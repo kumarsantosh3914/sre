@@ -52,14 +52,14 @@ sre-ai/
 **Status:** In progress
 
 **Completed:**
-- [ ] Monorepo scaffold
+- [x] Monorepo scaffold
 - [ ] PostgreSQL + pgvector + migrations
 - [ ] JWT auth + multi-tenancy
 - [ ] SQS + BullMQ setup
 - [ ] Logging + error handling
 - [ ] Docker + CI/CD
 
-**Next task:** NestJS monorepo scaffold with 4 services
+**Next task:** PostgreSQL + pgvector + migrations (TypeORM entities, first migration, tenant_id on every table)
 
 ---
 
