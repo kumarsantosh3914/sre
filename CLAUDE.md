@@ -53,13 +53,13 @@ sre-ai/
 
 **Completed:**
 - [x] Monorepo scaffold
-- [ ] PostgreSQL + pgvector + migrations
+- [x] PostgreSQL + pgvector + migrations
 - [ ] JWT auth + multi-tenancy
 - [ ] SQS + BullMQ setup
 - [ ] Logging + error handling
 - [ ] Docker + CI/CD
 
-**Next task:** PostgreSQL + pgvector + migrations (TypeORM entities, first migration, tenant_id on every table)
+**Next task:** JWT auth + multi-tenancy (User entity/migration, access+refresh tokens, tenant guard)
 
 ---
 

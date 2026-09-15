@@ -18,6 +18,15 @@ export enum IncidentSeverity {
   P3 = 'p3',
 }
 
+export enum ActionStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  EXECUTED = 'executed',
+  FAILED = 'failed',
+  ROLLED_BACK = 'rolled_back',
+}
+
 export interface RequestContext {
   traceId: string;
   tenantId: string;
