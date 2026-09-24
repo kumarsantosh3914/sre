@@ -11,3 +11,4 @@ export * from './schemas/queue-messages.schema';
 export * from './schemas/realtime-event.schema';
 export * from './schemas/config.schema';
 export * from './alerts/alert-normalization';
+export * from './net/safe-fetch';
