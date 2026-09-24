@@ -8,6 +8,8 @@ export interface PostmortemInput {
   actions: Action[];
   timeline: AuditLog[];
   prevention: string[];
+  // user id → email, for naming who did what in the timeline.
+  actorNames?: Record<string, string>;
 }
 
 // Markdown is rendered from customer-controlled text (alert titles, log
@@ -15,6 +17,7 @@ export interface PostmortemInput {
 export function mdText(text: string): string {
   return text
     .replace(/[<>]/g, (c) => (c === '<' ? '&lt;' : '&gt;'))
+    .replace(/\|/g, '\\|')
     .replace(/\r?\n/g, ' ')
     .trim();
 }
@@ -44,7 +47,15 @@ const EVENT_LABELS: Record<string, string> = {
   'incident.resolved': 'Resolved',
 };
 
-function timelineLine(e: AuditLog): string {
+// Same naming as the dashboard's revision table: a teammate by email, a
+// Slack user by id, never a bare "user:<uuid>".
+export function actorLabel(e: AuditLog, actorNames: Record<string, string> = {}): string {
+  if (e.actorType === 'system') return 'SRE.ai';
+  if (e.actorType === 'slack') return mdText(`Slack ${e.actorId ?? ''}`.trim());
+  return mdText((e.actorId && actorNames[e.actorId]) || 'Teammate');
+}
+
+function timelineLine(e: AuditLog, actorNames: Record<string, string>): string {
   const at = e.createdAt.toISOString().replace('T', ' ').slice(0, 19);
   const label = EVENT_LABELS[e.event] ?? e.event;
   const detail =
@@ -55,17 +66,13 @@ function timelineLine(e: AuditLog): string {
         : e.after && typeof e.after.status === 'string'
           ? ` (→ ${e.after.status})`
           : '';
-  const actor =
-    e.actorType === 'system'
-      ? 'SRE.ai'
-      : `${e.actorType}${e.actorId ? `:${e.actorId.slice(0, 8)}` : ''}`;
-  return `| ${at} UTC | ${label}${detail} | ${actor} |`;
+  return `| ${at} UTC | ${label}${detail} | ${actorLabel(e, actorNames)} |`;
 }
 
 // Build guide Day 27-28 structure: header, timeline (from the audit log),
 // root cause, evidence with citations, action taken, prevention.
 export function renderPostmortem(input: PostmortemInput): string {
-  const { incident, diagnosis, actions, timeline, prevention } = input;
+  const { incident, diagnosis, actions, timeline, prevention, actorNames = {} } = input;
   const fixes = actions.filter(
     (a) => a.actionType !== ActionType.ESCALATE && a.actionType !== ActionType.NOTIFY,
   );
@@ -89,7 +96,7 @@ export function renderPostmortem(input: PostmortemInput): string {
     '',
     '| Time | Event | Actor |',
     '| --- | --- | --- |',
-    ...timeline.map(timelineLine),
+    ...timeline.map((e) => timelineLine(e, actorNames)),
     '',
     '## Root Cause',
     '',

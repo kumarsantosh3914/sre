@@ -9,3 +9,6 @@ coverage/
 .DS_Store
 .pnpm-store/
 *.tsbuildinfo
+
+# Impeccable review captures (regenerated locally, not shipped)
+.impeccable/review/

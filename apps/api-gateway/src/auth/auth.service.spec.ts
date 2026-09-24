@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Tenant, User } from '@sreai/database';
 import { UserRole } from '@sreai/shared';
 import * as bcrypt from 'bcrypt';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 
 type MockRepo<T extends { id: string }> = {
@@ -58,6 +58,30 @@ describe('AuthService', () => {
       await expect(
         service.register({ tenantName: 'Acme', email: 'a@acme.com', password: 'password123' }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('rejects a taken organisation name with its own message, not the email one', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      tenantRepo.findOne.mockResolvedValue({ id: 't0', name: 'Acme' } as Tenant);
+
+      await expect(
+        service.register({ tenantName: 'Acme', email: 'b@acme.com', password: 'password123' }),
+      ).rejects.toThrow('An organisation with this name already exists');
+      expect(transactionMock).not.toHaveBeenCalled();
+    });
+
+    it('maps a racing tenant-name unique violation to the organisation message', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      tenantRepo.findOne.mockResolvedValue(null);
+      const driverError = Object.assign(new Error('duplicate key'), {
+        code: '23505',
+        constraint: 'tenants_name_key',
+      });
+      transactionMock.mockRejectedValue(new QueryFailedError('INSERT', [], driverError));
+
+      await expect(
+        service.register({ tenantName: 'Acme', email: 'b@acme.com', password: 'password123' }),
+      ).rejects.toThrow('An organisation with this name already exists');
     });
 
     it('creates a tenant + owner user and issues tokens', async () => {
