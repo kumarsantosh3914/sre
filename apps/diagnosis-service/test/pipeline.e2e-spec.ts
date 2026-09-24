@@ -11,6 +11,7 @@ import {
   Incident,
   Integration,
   MonitoredService,
+  Postmortem,
   Tenant,
 } from '@sreai/database';
 import { createTestDatabase, TestDatabase } from '@sreai/database/testing';
@@ -280,6 +281,11 @@ describe('Diagnosis pipeline (e2e: Postgres + Redis + BullMQ + SQS + mock upstre
 
     const resolved = await waitFor(() => incidentByTitle('HighCPU', IncidentStatus.RESOLVED));
     expect(resolved.mttrSeconds).toBe(240);
+    // The memory worker writes the post-mortem asynchronously.
+    const postmortem = await waitFor(() =>
+      ds.getRepository(Postmortem).findOne({ where: { tenantId, incidentId: resolved.id } }),
+    );
+    expect(postmortem.markdown).toContain('# Post-Mortem: HighCPU');
     const commands = await drainJsonMessages<ActionCommand>(sqs, urls.actions);
     expect(
       commands.some((c) => c.kind === 'incident_resolved' && c.incidentId === incident.id),

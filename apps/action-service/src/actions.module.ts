@@ -9,11 +9,14 @@ import {
   IntegrationReader,
   Runbook,
   Tenant,
+  User,
 } from '@sreai/database';
 import { parseEncryptionKey } from '@sreai/shared';
 import { Repository } from 'typeorm';
 import { ApprovalExpiryQueue, createApprovalExpiryQueue } from './approvals/approval-expiry.queue';
 import { ActionCommandConsumer } from './commands/action-command.consumer';
+import { DigestBuilder } from './digest/digest.builder';
+import { DigestScheduler } from './digest/digest.scheduler';
 import { APPROVAL_EXPIRY_QUEUE, INTEGRATION_READER } from './common/tokens';
 import {
   ECS_CLIENT_BUILDER,
@@ -38,7 +41,9 @@ import { EscalationService } from './orchestrator/escalation.service';
 import { IncidentContextService } from './orchestrator/incident-context.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Action, Diagnosis, Incident, Integration, Runbook, Tenant])],
+  imports: [
+    TypeOrmModule.forFeature([Action, Diagnosis, Incident, Integration, Runbook, Tenant, User]),
+  ],
   providers: [
     {
       provide: INTEGRATION_READER,
@@ -64,6 +69,8 @@ import { IncidentContextService } from './orchestrator/incident-context.service'
     ActionExecutor,
     ActionOrchestrator,
     ActionCommandConsumer,
+    DigestBuilder,
+    DigestScheduler,
   ],
   exports: [ActionOrchestrator, NotifierService, INTEGRATION_READER, IncidentContextService],
 })
