@@ -1,20 +1,26 @@
+import './load-env';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { WinstonModule } from 'nest-winston';
 import { createWinstonLogger } from '@sreai/shared';
+import { NestStructuredLogger, configureHttpApp } from '@sreai/shared/nest';
 import { AppModule } from './app.module';
+import { configureBodyParsers } from './http/body-parsers';
 
 const SERVICE_NAME = 'ingestion-service';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger({ instance: createWinstonLogger(SERVICE_NAME) }),
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new NestStructuredLogger(createWinstonLogger(SERVICE_NAME)),
+    rawBody: true,
   });
 
   app.use(helmet());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // Behind a load balancer: rate limiting must key on the client IP.
+  app.set('trust proxy', 1);
+  configureBodyParsers(app);
+  configureHttpApp(app);
 
   const port = process.env.INGESTION_SERVICE_PORT ?? 3001;
   await app.listen(port);

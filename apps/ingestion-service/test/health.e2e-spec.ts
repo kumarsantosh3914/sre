@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import { HealthController } from '../src/health/health.controller';
 
+// Controller-only: AppModule needs Postgres, Redis and SQS — see
+// webhooks.e2e-spec.ts for the full pipeline test.
 describe('Health (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [HealthController],
     }).compile();
 
     app = moduleFixture.createNestApplication();

@@ -1,22 +1,16 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { dataSourceOptions } from '@sreai/database';
+import { createTestDatabase, TestDatabase } from '@sreai/database/testing';
+import { configureHttpApp } from '@sreai/shared/nest';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { AuthModule } from '../src/auth/auth.module';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
 
 jest.setTimeout(120_000);
-
-// dataSourceOptions is typed as the full DataSourceOptions union (every
-// TypeORM driver); narrow to the postgres member so spreading it with a
-// `url` override type-checks.
-const pgDataSourceOptions = dataSourceOptions as Extract<DataSourceOptions, { type: 'postgres' }>;
 
 const REFRESH_COOKIE_PREFIX = 'refresh_token=';
 
@@ -31,23 +25,13 @@ function extractRefreshCookie(setCookieHeader: string | string[] | undefined): s
   return cookie.split(';')[0];
 }
 
-describe('Auth (e2e, real Postgres via testcontainers)', () => {
-  let container: StartedPostgreSqlContainer;
+// Real PostgreSQL: TEST_DATABASE_URL if set, otherwise a testcontainer.
+describe('Auth (e2e, real Postgres)', () => {
+  let db: TestDatabase;
   let app: INestApplication;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('pgvector/pgvector:pg16')
-      .withDatabase('sreai_test')
-      .withUsername('sreai')
-      .withPassword('password')
-      .start();
-
-    const connectionUri = container.getConnectionUri();
-
-    const migrationDataSource = new DataSource({ ...pgDataSourceOptions, url: connectionUri });
-    await migrationDataSource.initialize();
-    await migrationDataSource.runMigrations();
-    await migrationDataSource.destroy();
+    db = await createTestDatabase();
 
     process.env.JWT_SECRET = 'e2e-test-access-secret-at-least-32-characters';
     process.env.JWT_REFRESH_SECRET = 'e2e-test-refresh-secret-at-least-32-characters';
@@ -55,7 +39,7 @@ describe('Auth (e2e, real Postgres via testcontainers)', () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
-        TypeOrmModule.forRoot({ ...pgDataSourceOptions, url: connectionUri }),
+        TypeOrmModule.forRoot(db.options),
         AuthModule,
       ],
       providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
@@ -63,13 +47,13 @@ describe('Auth (e2e, real Postgres via testcontainers)', () => {
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    configureHttpApp(app);
     await app.init();
   });
 
   afterAll(async () => {
     await app.close();
-    await container.stop();
+    await db.destroy();
   });
 
   const credentials = { tenantName: 'Acme Inc', email: 'owner@acme.com', password: 'password123' };
@@ -80,8 +64,8 @@ describe('Auth (e2e, real Postgres via testcontainers)', () => {
       .send(credentials)
       .expect(201);
 
-    expect(res.body.accessToken).toEqual(expect.any(String));
-    expect(res.body.user).toMatchObject({ email: credentials.email, role: 'owner' });
+    expect(res.body.data.accessToken).toEqual(expect.any(String));
+    expect(res.body.data.user).toMatchObject({ email: credentials.email, role: 'owner' });
     expect(extractRefreshCookie(res.headers['set-cookie'])).toContain(REFRESH_COOKIE_PREFIX);
   });
 
@@ -90,7 +74,11 @@ describe('Auth (e2e, real Postgres via testcontainers)', () => {
   });
 
   it('returns 409, not 500, when two concurrent registrations race on the same new email', async () => {
-    const raceCredentials = { tenantName: 'Race Co', email: 'race@acme.com', password: 'password123' };
+    const raceCredentials = {
+      tenantName: 'Race Co',
+      email: 'race@acme.com',
+      password: 'password123',
+    };
 
     const [first, second] = await Promise.all([
       request(app.getHttpServer()).post('/auth/register').send(raceCredentials),
@@ -118,20 +106,20 @@ describe('Auth (e2e, real Postgres via testcontainers)', () => {
       .send({ email: credentials.email, password: credentials.password })
       .expect(200);
 
-    const accessToken = loginRes.body.accessToken as string;
+    const accessToken = loginRes.body.data.accessToken as string;
     const firstRefreshCookie = extractRefreshCookie(loginRes.headers['set-cookie']);
 
     const meRes = await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
-    expect(meRes.body).toMatchObject({ email: credentials.email, role: 'owner' });
+    expect(meRes.body.data).toMatchObject({ email: credentials.email, role: 'owner' });
 
     const refreshRes = await request(app.getHttpServer())
       .post('/auth/refresh')
       .set('Cookie', firstRefreshCookie)
       .expect(200);
-    const rotatedAccessToken = refreshRes.body.accessToken as string;
+    const rotatedAccessToken = refreshRes.body.data.accessToken as string;
     const rotatedRefreshCookie = extractRefreshCookie(refreshRes.headers['set-cookie']);
     expect(rotatedAccessToken).toEqual(expect.any(String));
     // Refresh tokens carry a jti specifically so rotation always produces a

@@ -1,13 +1,14 @@
 import 'reflect-metadata';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-// Entities and migrations are added as part of the "PostgreSQL + pgvector +
-// migrations" foundation task. `synchronize` must never be true — see CLAUDE.md.
+// `synchronize` must never be true — schema changes go through migrations
+// only (CLAUDE.md rule #1). Query logging is opt-in: TypeORM's logger
+// writes straight to the console, bypassing the structured Winston logger.
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.DATABASE_URL,
   synchronize: false,
-  logging: process.env.NODE_ENV !== 'production',
+  logging: process.env.DB_QUERY_LOGGING === 'true',
   entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
 };

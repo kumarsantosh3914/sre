@@ -14,4 +14,13 @@ export class Integration extends TenantScopedEntity {
 
   @Column({ type: 'jsonb', default: () => "'{}'" })
   config: Record<string, unknown>;
+
+  @Column({ default: true })
+  active: boolean;
+
+  @Column({ name: 'last_tested_at', type: 'timestamptz', nullable: true })
+  lastTestedAt: Date | null;
+
+  @Column({ name: 'last_error', type: 'text', nullable: true })
+  lastError: string | null;
 }

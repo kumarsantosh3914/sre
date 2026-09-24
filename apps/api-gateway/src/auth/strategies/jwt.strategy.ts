@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { JwtAccessPayload } from '@sreai/shared';
+import { JwtAccessPayload, updateTraceContext } from '@sreai/shared';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
@@ -19,6 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtAccessPayload): JwtAccessPayload {
+    // From here on every log line for this request carries the tenant.
+    updateTraceContext({ tenantId: payload.tenantId, userId: payload.sub });
     return payload;
   }
 }

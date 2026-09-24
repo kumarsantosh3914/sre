@@ -1,3 +1,4 @@
+import { ServiceMetadata } from '@sreai/shared';
 import { Column, Entity, Index } from 'typeorm';
 import { TenantScopedEntity } from './tenant-scoped.entity';
 
@@ -13,4 +14,12 @@ export class MonitoredService extends TenantScopedEntity {
   // confidence score, e.g. for payment-service.
   @Column({ name: 'always_escalate', default: false })
   alwaysEscalate: boolean;
+
+  // Auto-execute is opt-in per service (PRD risk mitigation: default to
+  // draft-and-approve until the customer trusts it).
+  @Column({ name: 'auto_execute_enabled', default: false })
+  autoExecuteEnabled: boolean;
+
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  metadata: ServiceMetadata;
 }
