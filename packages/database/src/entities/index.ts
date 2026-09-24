@@ -7,3 +7,8 @@ export * from './diagnosis.entity';
 export * from './citation-failure.entity';
 export * from './action.entity';
 export * from './integration.entity';
+export * from './api-key.entity';
+export * from './audit-log.entity';
+export * from './postmortem.entity';
+export * from './resolution-pattern.entity';
+export * from './runbook.entity';

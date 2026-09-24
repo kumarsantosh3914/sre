@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('tenants')
 export class Tenant {
@@ -10,6 +16,11 @@ export class Tenant {
 
   @Column({ unique: true })
   slug: string;
+
+  // Validated with TenantSettingsSchema on write; read with
+  // parseTenantSettings so defaults always apply.
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  settings: Record<string, unknown>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

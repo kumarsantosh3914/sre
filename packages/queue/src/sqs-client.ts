@@ -7,6 +7,12 @@ export function createSqsClient(): SQSClient {
 
   if (process.env.LOCALSTACK_ENDPOINT) {
     config.endpoint = process.env.LOCALSTACK_ENDPOINT;
+    // LocalStack / ElasticMQ accept any credentials; don't make local dev
+    // depend on a real AWS profile.
+    config.credentials = {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? 'test',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? 'test',
+    };
   }
 
   return new SQSClient(config);
