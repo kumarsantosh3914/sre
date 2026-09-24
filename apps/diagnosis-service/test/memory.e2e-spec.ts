@@ -133,15 +133,13 @@ describe('Memory layer (e2e: post-mortems, patterns, runbooks)', () => {
       'action.executed',
       'incident.resolved',
     ]) {
-      await ds
-        .getRepository(AuditLog)
-        .save({
-          tenantId,
-          incidentId: incident.id,
-          actorType: AuditActorType.SYSTEM,
-          event,
-          metadata: {},
-        });
+      await ds.getRepository(AuditLog).save({
+        tenantId,
+        incidentId: incident.id,
+        actorType: AuditActorType.SYSTEM,
+        event,
+        metadata: {},
+      });
     }
     return incident;
   }

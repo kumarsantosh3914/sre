@@ -10,10 +10,12 @@
     "dev": "pnpm -r --parallel --filter=\"./apps/*\" run dev",
     "build": "pnpm -r --filter=\"./apps/*\" --filter=\"./packages/*\" run build",
     "lint": "pnpm -r run lint",
-    "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\"",
     "test": "pnpm -r --filter=\"./apps/*\" --filter=\"./packages/*\" run test",
     "test:cov": "pnpm -r --filter=\"./apps/*\" --filter=\"./packages/*\" run test:cov",
-    "test:e2e": "pnpm -r --workspace-concurrency=1 --filter=\"./apps/*\" --filter=\"./packages/*\" --if-present run test:e2e"
+    "test:e2e": "pnpm -r --workspace-concurrency=1 --filter=\"./apps/*\" --filter=\"./packages/*\" --if-present run test:e2e",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\"",
+    "migrate": "pnpm --filter @sreai/database migration:run"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",

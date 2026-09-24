@@ -160,12 +160,10 @@ export class MemoryService {
         ['tenant_id', 'incident_id'],
       )
       .execute();
-    const row = await this.ds
-      .getRepository(Postmortem)
-      .findOneOrFail({
-        where: { tenantId: incident.tenantId, incidentId: incident.id },
-        select: { id: true },
-      });
+    const row = await this.ds.getRepository(Postmortem).findOneOrFail({
+      where: { tenantId: incident.tenantId, incidentId: incident.id },
+      select: { id: true },
+    });
     return row.id;
   }
 
