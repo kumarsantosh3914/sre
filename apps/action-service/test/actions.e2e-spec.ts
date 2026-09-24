@@ -451,4 +451,19 @@ describe('Action layer (e2e: Postgres + Redis/BullMQ + mock Slack/PagerDuty/ECS)
     expect(action).toMatchObject({ tier: 'draft', status: ActionStatus.PENDING });
     expect(ecsState.desiredCount).toBe(4);
   });
+
+  it('never pages or executes for a synthetic test alert, even at high confidence', async () => {
+    ecsState.desiredCount = 2;
+    const { incident, diagnosis } = await incidentWithDiagnosis(0.99, 'SCALE_SERVICE: add a task', {
+      severity: IncidentSeverity.P1,
+    });
+    await ds
+      .getRepository(Incident)
+      .update({ tenantId, id: incident.id }, { labels: { sreai_test: 'true' } });
+    await orchestrator.handle(command(incident, diagnosis));
+    expect(ecsState.desiredCount).toBe(2);
+    expect(mocks.of('/pagerduty')).toHaveLength(0);
+    expect((await actionsOf(incident.id)).map((a) => a.actionType)).toEqual(['escalate']);
+    expect(JSON.stringify(mocks.of('/chat.postMessage'))).toContain('Test alert diagnosed');
+  });
 });

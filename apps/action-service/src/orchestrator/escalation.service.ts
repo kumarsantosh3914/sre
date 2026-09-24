@@ -62,7 +62,7 @@ export class EscalationService {
 
     const settings = await this.ctx.settings(tenantId);
     const slackTarget = await this.notifier.slackTarget(tenantId);
-    const wantsPage = req.page || !slackTarget;
+    const wantsPage = !this.ctx.isTestIncident(incident) && (req.page || !slackTarget);
     const silenced =
       wantsPage &&
       !shouldPage(incident.severity, new Date(), settings.timezone, settings.silenceWindows);

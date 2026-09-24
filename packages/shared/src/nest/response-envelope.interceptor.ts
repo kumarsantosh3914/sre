@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
   SetMetadata,
+  StreamableFile,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, map } from 'rxjs';
@@ -34,11 +35,12 @@ export class ResponseEnvelopeInterceptor<T> implements NestInterceptor<T, Succes
       return next.handle();
     }
     return next.handle().pipe(
-      map((data) => ({
-        success: true as const,
-        data,
-        traceId: getTraceContext()?.traceId ?? null,
-      })),
+      map((data) =>
+        // File downloads (CSV/markdown exports) are streamed as-is.
+        data instanceof StreamableFile
+          ? data
+          : { success: true as const, data, traceId: getTraceContext()?.traceId ?? null },
+      ),
     );
   }
 }

@@ -127,6 +127,12 @@ export class IncidentContextService {
     }
   }
 
+  // Synthetic alerts from the integrations "Test" button: diagnosed and
+  // reported, but never allowed to page anyone or touch infrastructure.
+  isTestIncident(incident: Incident): boolean {
+    return incident.labels?.sreai_test === 'true';
+  }
+
   isClosed(incident: Incident): boolean {
     return incident.status === IncidentStatus.RESOLVED || incident.parentIncidentId !== null;
   }

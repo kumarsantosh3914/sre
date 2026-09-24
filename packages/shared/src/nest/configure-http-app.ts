@@ -18,6 +18,9 @@ export function configureHttpApp(app: INestApplication): void {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor(app.get(Reflector)));
+  // A fresh Reflector rather than app.get(Reflector): it's stateless, and
+  // pnpm may give an app a different physical @nestjs/core copy (peer
+  // variants), which breaks lookup by class token.
+  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor(new Reflector()));
   app.enableShutdownHooks();
 }
