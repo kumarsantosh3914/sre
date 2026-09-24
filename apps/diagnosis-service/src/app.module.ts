@@ -1,7 +1,12 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { dataSourceOptions } from '@sreai/database';
+import { QueueInfraModule } from '@sreai/queue/nest';
+import { DiagnosisModule } from './diagnosis/diagnosis.module';
 import { HealthController } from './health/health.controller';
+import { IntakeModule } from './intake/intake.module';
 
 @Module({
   imports: [
@@ -14,8 +19,11 @@ import { HealthController } from './health/health.controller';
       isGlobal: true,
       envFilePath: ['.env', join(__dirname, '..', '..', '..', '.env')],
     }),
+    TypeOrmModule.forRoot(dataSourceOptions),
+    QueueInfraModule,
+    DiagnosisModule,
+    IntakeModule,
   ],
   controllers: [HealthController],
-  providers: [],
 })
 export class AppModule {}

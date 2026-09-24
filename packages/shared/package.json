@@ -4,7 +4,11 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "nest.js", "nest.d.ts"],
+  "files": [
+    "dist",
+    "nest.js",
+    "nest.d.ts"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\"",
@@ -12,6 +16,7 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
+    "undici": "^6.28.1",
     "winston": "^3.13.1",
     "zod": "^3.23.8"
   },
@@ -21,9 +26,15 @@
     "rxjs": "^7.8.1"
   },
   "peerDependenciesMeta": {
-    "@nestjs/common": { "optional": true },
-    "@nestjs/core": { "optional": true },
-    "rxjs": { "optional": true }
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@nestjs/common": "^10.4.1",
@@ -38,13 +49,20 @@
     "typescript": "^5.5.4"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },
-    "collectCoverageFrom": ["**/*.ts", "!**/index.ts"],
+    "collectCoverageFrom": [
+      "**/*.ts",
+      "!**/index.ts"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
