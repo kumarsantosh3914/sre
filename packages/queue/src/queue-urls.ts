@@ -27,13 +27,21 @@ const ENV_KEYS: Record<keyof QueueUrls, string> = {
   actionsDlq: 'SQS_ACTIONS_DLQ_URL',
 };
 
-const QUEUE_NAMES: Record<keyof QueueUrls, string> = {
-  p1: SQS_QUEUE_NAMES.P1,
-  p2: SQS_QUEUE_NAMES.P2,
-  incidentsDlq: SQS_QUEUE_NAMES.DLQ,
-  actions: SQS_QUEUE_NAMES.ACTIONS,
-  actionsDlq: SQS_QUEUE_NAMES.ACTIONS_DLQ,
-};
+// Optional prefix so parallel test runs (or several developers sharing
+// one LocalStack) get isolated queues. Empty in production.
+function queueName(base: string): string {
+  return `${process.env.SQS_QUEUE_NAME_PREFIX ?? ''}${base}`;
+}
+
+function queueNames(): Record<keyof QueueUrls, string> {
+  return {
+    p1: queueName(SQS_QUEUE_NAMES.P1),
+    p2: queueName(SQS_QUEUE_NAMES.P2),
+    incidentsDlq: queueName(SQS_QUEUE_NAMES.DLQ),
+    actions: queueName(SQS_QUEUE_NAMES.ACTIONS),
+    actionsDlq: queueName(SQS_QUEUE_NAMES.ACTIONS_DLQ),
+  };
+}
 
 function shouldAutoCreate(): boolean {
   const flag = process.env.SQS_AUTO_CREATE_QUEUES;
@@ -67,10 +75,11 @@ async function createQueue(
 // Creates both queue pairs with their redrive policies (DLQ after
 // DLQ_MAX_RECEIVE_COUNT receives, per CLAUDE.md). Idempotent.
 export async function ensureQueues(client: SQSClient): Promise<QueueUrls> {
-  const incidentsDlq = await createQueue(client, SQS_QUEUE_NAMES.DLQ, {
+  const names = queueNames();
+  const incidentsDlq = await createQueue(client, names.incidentsDlq, {
     MessageRetentionPeriod: String(DLQ_RETENTION_SECONDS),
   });
-  const actionsDlq = await createQueue(client, SQS_QUEUE_NAMES.ACTIONS_DLQ, {
+  const actionsDlq = await createQueue(client, names.actionsDlq, {
     MessageRetentionPeriod: String(DLQ_RETENTION_SECONDS),
   });
 
@@ -86,10 +95,10 @@ export async function ensureQueues(client: SQSClient): Promise<QueueUrls> {
   const actionsDlqArn = await getQueueArn(client, actionsDlq);
 
   return {
-    p1: await createQueue(client, SQS_QUEUE_NAMES.P1, redrive(incidentsDlqArn)),
-    p2: await createQueue(client, SQS_QUEUE_NAMES.P2, redrive(incidentsDlqArn)),
+    p1: await createQueue(client, names.p1, redrive(incidentsDlqArn)),
+    p2: await createQueue(client, names.p2, redrive(incidentsDlqArn)),
     incidentsDlq,
-    actions: await createQueue(client, SQS_QUEUE_NAMES.ACTIONS, redrive(actionsDlqArn)),
+    actions: await createQueue(client, names.actions, redrive(actionsDlqArn)),
     actionsDlq,
   };
 }
@@ -100,12 +109,13 @@ export async function resolveQueueUrls(client: SQSClient): Promise<QueueUrls> {
   if (shouldAutoCreate()) {
     return ensureQueues(client);
   }
+  const names = queueNames();
   const entries = await Promise.all(
     (Object.keys(ENV_KEYS) as (keyof QueueUrls)[]).map(async (key) => {
       const fromEnv = process.env[ENV_KEYS[key]];
       if (fromEnv) return [key, fromEnv] as const;
-      const res = await client.send(new GetQueueUrlCommand({ QueueName: QUEUE_NAMES[key] }));
-      if (!res.QueueUrl) throw new Error(`Queue ${QUEUE_NAMES[key]} not found`);
+      const res = await client.send(new GetQueueUrlCommand({ QueueName: names[key] }));
+      if (!res.QueueUrl) throw new Error(`Queue ${names[key]} not found`);
       return [key, res.QueueUrl] as const;
     }),
   );
