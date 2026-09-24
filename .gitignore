@@ -11,4 +11,4 @@ coverage/
 *.tsbuildinfo
 
 # Impeccable review captures (regenerated locally, not shipped)
-.impeccable/review/
+**/.impeccable/review/

@@ -1,0 +1,244 @@
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/martian-mono/index.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Drafting media.
+ * Blueprint (night): pale linework on Prussian blue — the medium engineers
+ *   read at 3am without a white screen blinding them.
+ * Whiteprint (day): Prussian linework on warm-white drafting film.
+ * One ink — safety orange — marks what needs a human now.
+ * Values are space-separated RGB so Tailwind can apply alpha.
+ */
+:root,
+[data-theme='whiteprint'] {
+  color-scheme: light;
+  --ground: 246 243 235;
+  --sheet: 251 249 244;
+  --panel: 238 234 224;
+  --ink: 10 38 66;
+  --ink-2: 55 84 113;
+  --ink-3: 84 106 130;
+  --rule: 10 38 66;
+  --signal: 176 66 4;
+  --signal-ink: 255 255 255;
+  --ok: 20 118 84;
+  --fault: 190 36 44;
+  --cyan: 18 104 150;
+  --grid-alpha: 0.05;
+  --rule-alpha: 0.16;
+  /* Chart series (validated: lightness band, chroma, CVD, contrast vs sheet). */
+  --series-1: 235 104 52;
+  --series-2: 42 120 214;
+  --series-3: 19 138 96;
+}
+
+[data-theme='blueprint'] {
+  color-scheme: dark;
+  --ground: 4 38 66;
+  --sheet: 8 48 80;
+  --panel: 14 58 94;
+  --ink: 232 241 248;
+  --ink-2: 176 201 224;
+  --ink-3: 140 170 198;
+  --rule: 200 224 244;
+  --signal: 255 138 51;
+  --signal-ink: 20 18 12;
+  --ok: 118 214 170;
+  --fault: 255 122 122;
+  --cyan: 120 205 244;
+  --grid-alpha: 0.055;
+  --rule-alpha: 0.2;
+  --series-1: 217 89 38;
+  --series-2: 57 135 229;
+  --series-3: 25 158 112;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --ground: 4 38 66;
+    --sheet: 8 48 80;
+    --panel: 14 58 94;
+    --ink: 232 241 248;
+    --ink-2: 176 201 224;
+    --ink-3: 140 170 198;
+    --rule: 200 224 244;
+    --signal: 255 138 51;
+    --signal-ink: 20 18 12;
+    --ok: 118 214 170;
+    --fault: 255 122 122;
+    --cyan: 120 205 244;
+    --grid-alpha: 0.055;
+    --rule-alpha: 0.2;
+  }
+}
+
+@layer base {
+  html {
+    background: rgb(var(--ground));
+    color: rgb(var(--ink));
+    font-family: theme('fontFamily.sans');
+    font-size: 100%;
+    font-variation-settings: 'wdth' 100;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-variant-numeric: tabular-nums;
+    caret-color: rgb(var(--signal));
+    scrollbar-color: rgb(var(--rule) / 0.35) transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    /* The blueprint's own drafting grid — only on the ground, never on sheets. */
+    background-image:
+      linear-gradient(rgb(var(--rule) / var(--grid-alpha)) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--rule) / var(--grid-alpha)) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -1px -1px;
+  }
+
+  ::selection {
+    background: rgb(var(--signal) / 0.3);
+    color: rgb(var(--ink));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--signal));
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--rule) / 0.3);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Hairline rules: drafting line weight, not card borders. */
+  .rule {
+    border-color: rgb(var(--rule) / var(--rule-alpha));
+  }
+  .rule-strong {
+    border-color: rgb(var(--rule) / calc(var(--rule-alpha) * 2.4));
+  }
+
+  /* Lettering for field labels in title blocks and tables (ISO-style
+     condensed caps). Not a heading kicker: it labels a value. */
+  .lettering {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-variation-settings: 'wdth' 72;
+    font-weight: 560;
+    color: rgb(var(--ink-3));
+  }
+
+  .condensed {
+    font-variation-settings: 'wdth' 78;
+  }
+
+  .sheet {
+    background: rgb(var(--sheet));
+    border: 1px solid rgb(var(--rule) / calc(var(--rule-alpha) * 1.6));
+  }
+
+  /* Registration ticks on sheet corners — the drafting frame. */
+  .registered {
+    position: relative;
+  }
+  .registered::before,
+  .registered::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    border-color: rgb(var(--rule) / 0.55);
+  }
+  .registered::before {
+    top: -5px;
+    left: -5px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  .registered::after {
+    bottom: -5px;
+    right: -5px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+
+  .measure {
+    max-width: 68ch;
+  }
+}
+
+@keyframes draw-x {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Leader lines plot in like a pen, then the arrowhead lands. */
+.leader {
+  stroke-dasharray: 1;
+  animation: plot 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.leader-head {
+  animation: fade-in 120ms 240ms ease-out both;
+}
+
+@keyframes plot {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
