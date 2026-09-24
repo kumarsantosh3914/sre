@@ -1,0 +1,8 @@
+node_modules
+dist
+.next
+coverage
+pnpm-lock.yaml
+# Migrations are immutable once merged (CLAUDE.md) — never reformat them.
+packages/database/src/migrations/1789485653898_InitSchema.ts
+packages/database/src/migrations/1789486694163_AddUsers.ts
