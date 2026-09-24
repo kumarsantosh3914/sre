@@ -24,7 +24,7 @@ services:
   api-gateway:
     <<: *service
     image: ${IMAGE_PREFIX:-ghcr.io/sreai/sreai}-api-gateway:${IMAGE_TAG:-latest}
-    environment: { NODE_OPTIONS: '--max-old-space-size=192' }
+    environment: { NODE_OPTIONS: '--max-old-space-size=192', AUTH_COOKIE_PATH: /api/auth }
     depends_on:
       migrate: { condition: service_completed_successfully }
 

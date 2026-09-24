@@ -15,6 +15,10 @@ const BCRYPT_ROUNDS = 12;
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '7d';
 const POSTGRES_UNIQUE_VIOLATION = '23505';
+// tenants.name is UNIQUE (InitSchema); users.email is UNIQUE.
+const TENANT_NAME_CONSTRAINT = 'tenants_name_key';
+const EMAIL_TAKEN = 'Email already registered';
+const TENANT_NAME_TAKEN = 'An organisation with this name already exists';
 
 export interface AuthTokens {
   accessToken: string;
@@ -55,7 +59,11 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<{ user: User; tokens: AuthTokens }> {
     const existing = await this.userRepo.findOne({ where: { email: dto.email } });
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException(EMAIL_TAKEN);
+    }
+    const nameTaken = await this.tenantRepo.findOne({ where: { name: dto.tenantName } });
+    if (nameTaken) {
+      throw new ConflictException(TENANT_NAME_TAKEN);
     }
 
     const slug = await this.uniqueSlug(dto.tenantName);
@@ -79,15 +87,17 @@ export class AuthService {
         );
       });
     } catch (err) {
-      // The findOne check above has a race: two concurrent registrations
-      // for the same email can both pass it before either commits. Catch
-      // the DB's own unique constraint here rather than 500ing.
-      const driverErrorCode =
+      // The findOne checks above race: two concurrent registrations can
+      // both pass them before either commits. Catch the DB's own unique
+      // constraints here rather than 500ing, and name the one that fired.
+      const driverError =
         err instanceof QueryFailedError
-          ? (err.driverError as { code?: string } | undefined)?.code
+          ? (err.driverError as { code?: string; constraint?: string } | undefined)
           : undefined;
-      if (driverErrorCode === POSTGRES_UNIQUE_VIOLATION) {
-        throw new ConflictException('Email already registered');
+      if (driverError?.code === POSTGRES_UNIQUE_VIOLATION) {
+        throw new ConflictException(
+          driverError.constraint === TENANT_NAME_CONSTRAINT ? TENANT_NAME_TAKEN : EMAIL_TAKEN,
+        );
       }
       throw err;
     }

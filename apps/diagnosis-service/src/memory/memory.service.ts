@@ -8,6 +8,7 @@ import {
   Postmortem,
   ResolutionPattern,
   Runbook,
+  User,
 } from '@sreai/database';
 import { ActionStatus, ActionType, IncidentStatus, RUNBOOK_MIN_OCCURRENCES } from '@sreai/shared';
 import { DataSource, In } from 'typeorm';
@@ -134,6 +135,17 @@ export class MemoryService {
       rootCause: diagnosis?.hypothesis ?? null,
       fix: fix?.description ?? incident.resolutionNote,
     });
+    const userIds = [
+      ...new Set(
+        timeline.filter((e) => e.actorType === 'user' && e.actorId).map((e) => e.actorId as string),
+      ),
+    ];
+    const users = userIds.length
+      ? await this.ds.getRepository(User).find({
+          where: { tenantId: incident.tenantId, id: In(userIds) },
+          select: { id: true, email: true },
+        })
+      : [];
     const markdown = renderPostmortem({
       incident,
       serviceName,
@@ -141,6 +153,7 @@ export class MemoryService {
       actions,
       timeline,
       prevention,
+      actorNames: Object.fromEntries(users.map((u) => [u.id, u.email])),
     });
     const storageKey = await this.storage.put(incident.tenantId, incident.id, markdown);
 

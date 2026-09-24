@@ -21,6 +21,9 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const REFRESH_COOKIE = 'refresh_token';
+// Scoped to the refresh endpoint's public path. Behind the nginx /api/
+// prefix that's /api/auth, not /auth — otherwise the browser never sends it.
+const refreshCookiePath = (): string => process.env.AUTH_COOKIE_PATH ?? '/auth';
 const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface AuthResponse {
@@ -93,7 +96,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
     await this.authService.logout(user.sub);
-    res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+    res.clearCookie(REFRESH_COOKIE, { path: refreshCookiePath() });
     return { ok: true };
   }
 
@@ -108,7 +111,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
-      path: '/auth',
+      path: refreshCookiePath(),
     });
   }
 

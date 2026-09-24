@@ -47,19 +47,23 @@ sre-ai/
 
 > Update this section every time you start a new phase or complete a day.
 
-**Current Phase:** Phase 0 — Foundation
-**Current Day:** Day 1
-**Status:** In progress
+**Current Phase:** MVP build complete — hardening and first real tenants
+**Status:** All services, the dashboard and CI/CD are built and tested end to end
 
 **Completed:**
-- [x] Monorepo scaffold
-- [x] PostgreSQL + pgvector + migrations
-- [x] JWT auth + multi-tenancy
-- [ ] SQS + BullMQ setup
-- [ ] Logging + error handling
-- [ ] Docker + CI/CD
+- [x] Monorepo scaffold, PostgreSQL + pgvector + migrations, JWT auth + multi-tenancy
+- [x] SQS (P1/P2/actions + DLQs) + BullMQ, structured logging, error envelope
+- [x] Ingestion: Prometheus/Grafana/Sentry/CloudWatch/generic webhooks, dedup, storm grouping
+- [x] Diagnosis: collectors (Promise.allSettled), GPT-4o agent, citation enforcement, scoring
+- [x] Actions: confidence routing, ECS restart/scale, cache flush, redeploy, approvals, rollback, audit
+- [x] Notifications: Slack Block Kit + interactions, PagerDuty Events v2, silence windows
+- [x] Memory: post-mortems, resolution patterns, runbooks, daily digest
+- [x] API gateway: incidents, services, integrations, API keys, analytics, settings, team, realtime
+- [x] Dashboard (Next.js 14): blueprint/whiteprint design system — see apps/dashboard/DESIGN.md
+- [x] Docker + GitHub Actions CI/CD
 
-**Next task:** SQS + BullMQ setup (ingestion-service webhook receivers enqueue to SQS, DLQ configured)
+**Next task:** deploy to AWS (ECS Fargate or EC2), connect a first real tenant, and tune
+prompts/thresholds against real incidents
 
 ---
 
