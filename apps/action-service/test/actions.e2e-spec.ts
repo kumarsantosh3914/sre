@@ -28,6 +28,7 @@ import {
 } from '@sreai/shared';
 import { DataSource } from 'typeorm';
 import { ActionsModule } from '../src/actions.module';
+import { DigestScheduler } from '../src/digest/digest.scheduler';
 import { ECS_CLIENT_BUILDER } from '../src/handlers/ecs-client.factory';
 import { ActionExecutor } from '../src/orchestrator/action-executor.service';
 import { ActionOrchestrator } from '../src/orchestrator/action-orchestrator.service';
@@ -450,5 +451,30 @@ describe('Action layer (e2e: Postgres + Redis/BullMQ + mock Slack/PagerDuty/ECS)
     const [action] = await actionsOf(incident.id);
     expect(action).toMatchObject({ tier: 'draft', status: ActionStatus.PENDING });
     expect(ecsState.desiredCount).toBe(4);
+  });
+
+  it('never pages or executes for a synthetic test alert, even at high confidence', async () => {
+    ecsState.desiredCount = 2;
+    const { incident, diagnosis } = await incidentWithDiagnosis(0.99, 'SCALE_SERVICE: add a task', {
+      severity: IncidentSeverity.P1,
+    });
+    await ds
+      .getRepository(Incident)
+      .update({ tenantId, id: incident.id }, { labels: { sreai_test: 'true' } });
+    await orchestrator.handle(command(incident, diagnosis));
+    expect(ecsState.desiredCount).toBe(2);
+    expect(mocks.of('/pagerduty')).toHaveLength(0);
+    expect((await actionsOf(incident.id)).map((a) => a.actionType)).toEqual(['escalate']);
+    expect(JSON.stringify(mocks.of('/chat.postMessage'))).toContain('Test alert diagnosed');
+  });
+
+  it('sends the daily digest once per tenant-local day at 09:00', async () => {
+    const digest = app.get(DigestScheduler);
+    const nineAmUtc = new Date(Date.UTC(2031, 0, 7, 9, 5));
+    const beforeNine = new Date(Date.UTC(2031, 0, 8, 8, 5));
+    expect(await digest.tick(nineAmUtc)).toBe(1);
+    expect(JSON.stringify(mocks.of('/chat.postMessage'))).toContain('SRE.ai daily digest');
+    expect(await digest.tick(new Date(nineAmUtc.getTime() + 3_600_000))).toBe(0);
+    expect(await digest.tick(beforeNine)).toBe(0);
   });
 });

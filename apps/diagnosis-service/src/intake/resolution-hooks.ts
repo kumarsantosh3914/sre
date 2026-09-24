@@ -1,12 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Incident } from '@sreai/database';
+import { errorMeta } from '@sreai/shared';
+import { MemoryQueue } from '../memory/memory.queue';
 
-// Extension point for work that follows a resolution (post-mortem,
-// resolution-pattern learning) — implemented by the memory layer.
+// Work that follows a resolution: queue the memory job (post-mortem,
+// pattern learning, runbooks). Never fails the resolution itself.
 @Injectable()
 export class ResolutionHooks {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async onResolved(_incident: Incident, _traceId: string): Promise<void> {
-    // Intentionally empty until the memory layer is wired in.
+  private readonly logger = new Logger(ResolutionHooks.name);
+
+  constructor(private readonly memory: MemoryQueue) {}
+
+  async onResolved(incident: Incident, traceId: string): Promise<void> {
+    try {
+      await this.memory.enqueue({ tenantId: incident.tenantId, incidentId: incident.id, traceId });
+    } catch (err) {
+      this.logger.error('Could not queue post-resolution memory job', {
+        tenantId: incident.tenantId,
+        incidentId: incident.id,
+        ...errorMeta(err),
+      });
+    }
   }
 }

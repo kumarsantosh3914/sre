@@ -103,6 +103,16 @@ export class ActionOrchestrator {
       return;
     }
 
+    if (this.ctx.isTestIncident(incident)) {
+      await this.escalation.escalate({
+        incident,
+        diagnosis,
+        reason: 'Test alert diagnosed end to end — no action taken',
+        page: false,
+      });
+      return;
+    }
+
     const settings = await this.ctx.settings(tenantId);
     const thresholds = resolveThresholds(settings.autoThreshold, settings.draftThreshold);
     let tier = mostConservativeTier(

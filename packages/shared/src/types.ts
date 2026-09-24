@@ -50,6 +50,10 @@ export const EXECUTABLE_ACTION_TYPES = [
 
 export type ExecutableActionType = (typeof EXECUTABLE_ACTION_TYPES)[number];
 
+// Action types whose handler can undo them (the action-service's handler
+// is authoritative; this lets the API refuse an impossible rollback early).
+export const REVERSIBLE_ACTION_TYPES: readonly ActionType[] = [ActionType.SCALE_SERVICE];
+
 export function isExecutableActionType(value: string): value is ExecutableActionType {
   return (EXECUTABLE_ACTION_TYPES as readonly string[]).includes(value);
 }
